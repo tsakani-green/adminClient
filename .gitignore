@@ -27,11 +27,13 @@ env/
 ENV/
 env.bak/
 venv.bak/
+esg-ai-env/
 
-# Environment variables
+# Environment variables (SENSITIVE - DO NOT COMMIT)
 .env
 .env.local
 .env.*.local
+.env.production
 
 # IDE
 .vscode/
@@ -61,4 +63,30 @@ Thumbs.db
 .coverage.*
 htmlcov/
 .pytest_cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# API Keys & Secrets (SENSITIVE)
+config.py
+secrets.py
+*.key
+*.pem
+*.p12
+
+# Temporary files
+temp_*.py
+test_*.py
+debug_*.py
+*.tmp
+*.bak
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+dist/
+build/
 EOF
