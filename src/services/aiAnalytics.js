@@ -3,7 +3,7 @@
 
 class AIAnalyticsService {
   constructor() {
-    this.apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8002'
+    this.apiBase = import.meta.env.VITE_API_URL || ''
     this.models = {
       esgPredictor: 'gemini-pro',
       riskAssessment: 'gemini-pro',
@@ -14,28 +14,105 @@ class AIAnalyticsService {
     }
   }
 
+  // Generic POST with JSON and timeout; throws on auth errors, marks network/timeouts
+  async doPost(path, body, timeoutMs = 15000) {
+    const url = path.startsWith('http') ? path : `${this.apiBase}${path.startsWith('/') ? path : '/' + path}`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const headers = { 'Content-Type': 'application/json' }
+      const token = localStorage.getItem('token')
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      })
+      clearTimeout(timeout)
+
+      if (res.status === 401 || res.status === 403) {
+        const text = await res.text().catch(() => null)
+        const err = new Error('Unauthorized')
+        err.status = res.status
+        err.body = text
+        throw err
+      }
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => null)
+        const err = new Error(text || 'Request failed')
+        err.status = res.status
+        throw err
+      }
+
+      return await res.json()
+    } catch (err) {
+      clearTimeout(timeout)
+      if (err.name === 'AbortError') {
+        err.isNetworkOrTimeout = true
+      } else if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        err.isNetworkOrTimeout = true
+      }
+      throw err
+    }
+  }
+
+  // Generic POST for form data (file uploads)
+  async doFormPost(path, formData, timeoutMs = 30000) {
+    const url = path.startsWith('http') ? path : `${this.apiBase}${path.startsWith('/') ? path : '/' + path}`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const headers = {}
+      const token = localStorage.getItem('token')
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+        signal: controller.signal
+      })
+      clearTimeout(timeout)
+
+      if (res.status === 401 || res.status === 403) {
+        const text = await res.text().catch(() => null)
+        const err = new Error('Unauthorized')
+        err.status = res.status
+        err.body = text
+        throw err
+      }
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => null)
+        const err = new Error(text || 'Request failed')
+        err.status = res.status
+        throw err
+      }
+
+      return await res.json()
+    } catch (err) {
+      clearTimeout(timeout)
+      if (err.name === 'AbortError') err.isNetworkOrTimeout = true
+      throw err
+    }
+  }
+
   // 🔮 ESG Score Predictions
   async predictESGScores(clientId, timeHorizon = '12months') {
     try {
-      const response = await fetch(`${this.apiBase}/api/gemini/predict-esg-scores`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          clientId,
-          timeHorizon,
-          model: this.models.esgPredictor
-        })
+      const data = await this.doPost('/api/gemini/predict-esg-scores', {
+        clientId,
+        timeHorizon,
+        model: this.models.esgPredictor
       })
-
-      if (!response.ok) throw new Error('Failed to predict ESG scores')
-      
-      const data = await response.json()
       return this.formatESGPredictions(data)
     } catch (error) {
       console.error('ESG Score Prediction Error:', error)
+      if (error.status === 401 || error.status === 403) throw error
+      if (error.isNetworkOrTimeout) return this.formatESGPredictions({})
       throw error
     }
   }
@@ -43,25 +120,16 @@ class AIAnalyticsService {
   // 🛡️ Risk Assessment Engine
   async assessESGRisks(portfolioId, riskTypes = ['environmental', 'social', 'governance']) {
     try {
-      const response = await fetch(`${this.apiBase}/api/gemini/assess-risks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          portfolioId,
-          riskTypes,
-          model: this.models.riskAssessment
-        })
+      const data = await this.doPost('/api/gemini/assess-risks', {
+        portfolioId,
+        riskTypes,
+        model: this.models.riskAssessment
       })
-
-      if (!response.ok) throw new Error('Failed to assess ESG risks')
-      
-      const data = await response.json()
       return this.formatRiskAssessment(data)
     } catch (error) {
       console.error('Risk Assessment Error:', error)
+      if (error.status === 401 || error.status === 403) throw error
+      if (error.isNetworkOrTimeout) return this.formatRiskAssessment({})
       throw error
     }
   }
@@ -69,25 +137,16 @@ class AIAnalyticsService {
   // 🌱 Carbon Footprint Forecasting
   async forecastCarbonEmissions(clientId, forecastPeriod = '12months') {
     try {
-      const response = await fetch(`${this.apiBase}/api/gemini/forecast-carbon`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          clientId,
-          forecastPeriod,
-          model: this.models.carbonForecaster
-        })
+      const data = await this.doPost('/api/gemini/forecast-carbon', {
+        clientId,
+        forecastPeriod,
+        model: this.models.carbonForecaster
       })
-
-      if (!response.ok) throw new Error('Failed to forecast carbon emissions')
-      
-      const data = await response.json()
       return this.formatCarbonForecast(data)
     } catch (error) {
       console.error('Carbon Forecast Error:', error)
+      if (error.status === 401 || error.status === 403) throw error
+      if (error.isNetworkOrTimeout) return this.formatCarbonForecast({})
       throw error
     }
   }
@@ -95,25 +154,16 @@ class AIAnalyticsService {
   // 🌱 Sustainability Recommendations Engine
   async generateSustainabilityRecommendations(clientId, focusAreas = ['energy', 'emissions', 'water']) {
     try {
-      const response = await fetch(`${this.apiBase}/api/gemini/recommendations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          clientId,
-          focusAreas,
-          model: this.models.recommendationEngine
-        })
+      const data = await this.doPost('/api/gemini/recommendations', {
+        clientId,
+        focusAreas,
+        model: this.models.recommendationEngine
       })
-
-      if (!response.ok) throw new Error('Failed to generate recommendations')
-      
-      const data = await response.json()
       return this.formatRecommendations(data)
     } catch (error) {
       console.error('Recommendations Error:', error)
+      if (error.status === 401 || error.status === 403) throw error
+      if (error.isNetworkOrTimeout) return this.formatRecommendations({})
       throw error
     }
   }
@@ -126,20 +176,12 @@ class AIAnalyticsService {
       formData.append('analysisType', analysisType)
       formData.append('model', this.models.nlpProcessor)
 
-      const response = await fetch(`${this.apiBase}/api/gemini/analyze-document`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      })
-
-      if (!response.ok) throw new Error('Failed to analyze document')
-      
-      const data = await response.json()
+      const data = await this.doFormPost('/api/gemini/analyze-document', formData)
       return this.formatDocumentAnalysis(data)
     } catch (error) {
       console.error('Document Analysis Error:', error)
+      if (error.status === 401 || error.status === 403) throw error
+      if (error.isNetworkOrTimeout) return this.formatDocumentAnalysis({})
       throw error
     }
   }
@@ -147,28 +189,19 @@ class AIAnalyticsService {
   // 📊 AI-Generated ESG Report
   async generateAIReport(clientId, reportType = 'comprehensive', timeRange = '12months') {
     try {
-      const response = await fetch(`${this.apiBase}/api/gemini/generate-report`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          clientId,
-          reportType,
-          timeRange,
-          includePredictions: true,
-          includeRecommendations: true,
-          includeRiskAnalysis: true
-        })
-      })
-
-      if (!response.ok) throw new Error('Failed to generate AI report')
-      
-      const data = await response.json()
+      const data = await this.doPost('/api/gemini/generate-report', {
+        clientId,
+        reportType,
+        timeRange,
+        includePredictions: true,
+        includeRecommendations: true,
+        includeRiskAnalysis: true
+      }, 30000)
       return this.formatAIReport(data)
     } catch (error) {
       console.error('AI Report Generation Error:', error)
+      if (error.status === 401 || error.status === 403) throw error
+      if (error.isNetworkOrTimeout) return this.formatAIReport({})
       throw error
     }
   }

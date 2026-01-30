@@ -1,7 +1,7 @@
 import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { CircularProgress, Box } from '@mui/material'
-import { useUser } from '../contexts/UserContext'
+import { useUser } from '../contexts/UserContext';
 
 const AdminRoute = () => {
   const { user, loading } = useUser()

@@ -2,7 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import { UserProvider } from './contexts/UserContext'
+import { AuthProvider } from './context/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
 import AdminRoute from './components/AdminRoute'
 import Layout from './components/Layout'
@@ -71,40 +71,38 @@ const theme = createTheme({
 
 function App() {
   return (
-    <UserProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          {/* Protected Client Routes */}
-          <Route element={<PrivateRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/dashboard" element={<ClientDashboard />} />
-              <Route path="/create-invoice" element={<InvoiceWorking />} />
-              <Route path="/invoices" element={<InvoiceManagementSimple />} />
-              <Route path="/reports" element={<ClientReports />} />
-              <Route path="/generate-report" element={<ReportGenerator />} />
-              <Route path="/live-ai" element={<LiveAIAgent />} />
-            </Route>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        
+        {/* Protected Client Routes */}
+        <Route element={<PrivateRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<ClientDashboard />} />
+            <Route path="/create-invoice" element={<InvoiceWorking />} />
+            <Route path="/invoices" element={<InvoiceManagementSimple />} />
+            <Route path="/reports" element={<ClientReports />} />
+            <Route path="/generate-report" element={<ReportGenerator />} />
+            <Route path="/live-ai" element={<LiveAIAgent />} />
           </Route>
-          
-          {/* Protected Admin Routes */}
-          <Route element={<AdminRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/clients" element={<AdminClients />} />
-            </Route>
+        </Route>
+        
+        {/* Protected Admin Routes */}
+        <Route element={<AdminRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/clients" element={<AdminClients />} />
           </Route>
-          
-          {/* Default Route */}
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </ThemeProvider>
-    </UserProvider>
+        </Route>
+        
+        {/* Default Route */}
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </ThemeProvider>
   )
 }
 

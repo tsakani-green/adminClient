@@ -427,7 +427,7 @@ const Signup = () => {
         {/* Footer */}
         <Box sx={{ textAlign: 'center', mt: 3 }}>
           <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-            © 2025 AfricaESG.AI. All rights reserved.
+            ©GreenBDG Africa Pty Ltd. All rights reserved
           </Typography>
         </Box>
       </Container>

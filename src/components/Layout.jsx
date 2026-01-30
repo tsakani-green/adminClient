@@ -98,7 +98,7 @@ const Layout = () => {
               AfricaESG.AI
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {isAdmin ? 'Admin Panel' : 'Client Portal'}
+              {isAdmin ? 'Admin Panel' : null}
             </Typography>
           </Box>
         </Box>

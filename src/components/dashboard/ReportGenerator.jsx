@@ -60,7 +60,6 @@ import {
   Nature,
   People,
   Public,
-  Spa,
   Bolt,
   WaterDrop,
   Recycling,

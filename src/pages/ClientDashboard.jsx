@@ -60,7 +60,6 @@ import {
   Info,
   Warning,
   ArrowUpward,
-  ArrowDownward,
   Bolt,
   Biotech,
   Recycling,
@@ -101,145 +100,19 @@ import DataQualityCard from '../components/dashboard/DataQualityCard';
 import TargetsProgress from '../components/dashboard/TargetsProgress';
 import DashboardDebug from '../components/DashboardDebug';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
-
-const SectionHeader = ({ icon, title, subtitle, action, status }) => {
-  const theme = useTheme();
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: { xs: 'flex-start', sm: 'center' },
-        justifyContent: 'space-between',
-        gap: 2,
-        mb: 2.25,
-        flexDirection: { xs: 'column', sm: 'row' },
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-        <Avatar
-          variant="rounded"
-          sx={{
-            width: 44,
-            height: 44,
-            bgcolor: alpha(theme.palette.primary.main, 0.10),
-            color: theme.palette.primary.main,
-            borderRadius: 2,
-            flex: '0 0 auto',
-          }}
-        >
-          {icon}
-        </Avatar>
-
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.15 }}>
-            {title}
-          </Typography>
-
-          {subtitle && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              {subtitle}
-            </Typography>
-          )}
-
-          {status && (
-            <Chip
-              size="small"
-              label={status}
-              sx={{ mt: 1 }}
-              color={status === 'Live' ? 'success' : 'default'}
-              variant="outlined"
-            />
-          )}
-        </Box>
-      </Box>
-
-      {action && <Box sx={{ flex: '0 0 auto' }}>{action}</Box>}
-    </Box>
-  );
-};
-
-const StatCard = ({ title, value, icon, color = 'primary', trend, unit, subtitle, onClick, surfaceCard }) => {
-  const theme = useTheme();
-  const palette = theme.palette[color] || theme.palette.primary;
-  return (
-    <Card
-      sx={{
-        ...surfaceCard,
-        height: '100%',
-        cursor: onClick ? 'pointer' : 'default',
-      }}
-      onClick={onClick}
-    >
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Avatar
-            variant="rounded"
-            sx={{
-              bgcolor: alpha(palette.main, 0.12),
-              color: palette.main,
-              width: 48,
-              height: 48,
-              borderRadius: 2,
-            }}
-          >
-            {icon}
-          </Avatar>
-
-          {trend !== undefined && trend !== null && (
-            <Chip
-              icon={trend >= 0 ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
-              label={`${Math.abs(trend)}%`}
-              color={trend >= 0 ? 'success' : 'error'}
-              size="small"
-              sx={{ fontWeight: 800 }}
-            />
-          )}
-        </Box>
-
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75, fontWeight: 700 }}>
-          {title}
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-          <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -0.7 }}>
-            {value}
-          </Typography>
-          {unit && (
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-              {unit}
-            </Typography>
-          )}
-        </Box>
-
-        {subtitle && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {subtitle}
-          </Typography>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-const ESGPerformanceChart = ({ esgPerformance, COLORS }) => (
-  <ResponsiveContainer width="100%" height="100%">
-    <RadarChart data={esgPerformance}>
-      <PolarGrid />
-      <PolarAngleAxis dataKey="category" />
-      <PolarRadiusAxis angle={30} domain={[0, 100]} />
-      <Radar name="Current Score" dataKey="score" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.6} />
-      <Radar name="Target" dataKey="target" stroke={COLORS.success} fill="none" strokeDasharray="5 5" />
-      <Legend />
-      <Tooltip />
-    </RadarChart>
-  </ResponsiveContainer>
-);
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ClientDashboard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { user, loading: userLoading } = useUser();
+
+  // Redirect admin users to AdminDashboard
+  useEffect(() => {
+    if (!userLoading && user && user.role === 'admin') {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, userLoading, navigate]);
 
   // =========================
   // Base State
@@ -1275,7 +1148,135 @@ const ClientDashboard = () => {
     minHeight: '100vh',
   };
 
- 
+  const SectionHeader = ({ icon, title, subtitle, action, status }) => (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        justifyContent: 'space-between',
+        gap: 2,
+        mb: 2.25,
+        flexDirection: { xs: 'column', sm: 'row' },
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+        <Avatar
+          variant="rounded"
+          sx={{
+            width: 44,
+            height: 44,
+            bgcolor: alpha(theme.palette.primary.main, 0.10),
+            color: theme.palette.primary.main,
+            borderRadius: 2,
+            flex: '0 0 auto',
+          }}
+        >
+          {icon}
+        </Avatar>
+
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.15 }}>
+            {title}
+          </Typography>
+
+          {subtitle && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {subtitle}
+            </Typography>
+          )}
+
+          {status && (
+            <Chip
+              size="small"
+              label={status}
+              sx={{ mt: 1 }}
+              color={status === 'Live' ? 'success' : 'default'}
+              variant="outlined"
+            />
+          )}
+        </Box>
+      </Box>
+
+      {action && <Box sx={{ flex: '0 0 auto' }}>{action}</Box>}
+    </Box>
+  );
+
+  const StatCard = ({ title, value, icon, color = 'primary', trend, unit, subtitle, onClick }) => {
+    const palette = theme.palette[color] || theme.palette.primary;
+
+    return (
+      <Card
+        sx={{
+          ...surfaceCard,
+          height: '100%',
+          cursor: onClick ? 'pointer' : 'default',
+        }}
+        onClick={onClick}
+      >
+        <CardContent sx={{ p: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Avatar
+              variant="rounded"
+              sx={{
+                bgcolor: alpha(palette.main, 0.12),
+                color: palette.main,
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+              }}
+            >
+              {icon}
+            </Avatar>
+
+            {trend !== undefined && trend !== null && (
+              <Chip
+                icon={trend >= 0 ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
+                label={`${Math.abs(trend)}%`}
+                color={trend >= 0 ? 'success' : 'error'}
+                size="small"
+                sx={{ fontWeight: 800 }}
+              />
+            )}
+          </Box>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75, fontWeight: 700 }}>
+            {title}
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+            <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -0.7 }}>
+              {value}
+            </Typography>
+            {unit && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                {unit}
+              </Typography>
+            )}
+          </Box>
+
+          {subtitle && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              {subtitle}
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const ESGPerformanceChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
+      <RadarChart data={esgPerformance}>
+        <PolarGrid />
+        <PolarAngleAxis dataKey="category" />
+        <PolarRadiusAxis angle={30} domain={[0, 100]} />
+        <Radar name="Current Score" dataKey="score" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.6} />
+        <Radar name="Target" dataKey="target" stroke={COLORS.success} fill="none" strokeDasharray="5 5" />
+        <Legend />
+        <Tooltip />
+      </RadarChart>
+    </ResponsiveContainer>
+  );
 
   // =========================
   // Loading Screen
@@ -1801,7 +1802,6 @@ const ClientDashboard = () => {
                   trend={5.2}
                   subtitle="Overall ESG performance"
                   onClick={() => navigate('/sustainability-details')}
-                  surfaceCard={surfaceCard}
                 />
               </Grid>
 
@@ -1814,7 +1814,6 @@ const ClientDashboard = () => {
                   color="primary"
                   trend={8.5}
                   subtitle="CO₂ saved this year"
-                  surfaceCard={surfaceCard}
                 />
               </Grid>
 
@@ -1827,7 +1826,6 @@ const ClientDashboard = () => {
                   color="warning"
                   trend={12.3}
                   subtitle="Renewable energy usage"
-                  surfaceCard={surfaceCard}
                 />
               </Grid>
 
@@ -1840,7 +1838,6 @@ const ClientDashboard = () => {
                   color="info"
                   trend={6.7}
                   subtitle="Water saved this quarter"
-                  surfaceCard={surfaceCard}
                 />
               </Grid>
             </Grid>
@@ -1936,7 +1933,6 @@ const ClientDashboard = () => {
                           color="primary"
                           subtitle="Real-time power consumption"
                           trend={null}
-                          surfaceCard={surfaceCard}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
@@ -1948,7 +1944,6 @@ const ClientDashboard = () => {
                           color="success"
                           subtitle="Energy used today"
                           trend={null}
-                          surfaceCard={surfaceCard}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
@@ -1960,7 +1955,6 @@ const ClientDashboard = () => {
                           color="info"
                           subtitle="Total energy consumption"
                           trend={null}
-                          surfaceCard={surfaceCard}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
@@ -1971,7 +1965,6 @@ const ClientDashboard = () => {
                           color="warning"
                           subtitle="Sunsynk device"
                           trend={null}
-                          surfaceCard={surfaceCard}
                         />
                       </Grid>
                     </Grid>
@@ -2197,7 +2190,7 @@ const ClientDashboard = () => {
                 <Paper sx={{ ...surfaceCard, p: { xs: 2, md: 3 }, height: '100%' }}>
                   <SectionHeader icon={<Assessment />} title="ESG Performance" subtitle="Multi-dimensional assessment" />
                   <Box sx={{ height: 300 }}>
-                    <ESGPerformanceChart esgPerformance={esgPerformance} COLORS={COLORS} />
+                    <ESGPerformanceChart />
                   </Box>
                 </Paper>
               </Grid>

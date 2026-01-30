@@ -62,39 +62,6 @@ const LoginPage = () => {
     }
   };
 
-  const demoUsers = [
-    {
-      username: 'admin',
-      password: 'admin123',
-      description: 'Admin - Can see all portfolios',
-      portfolios: 'Dube Trade Port + Bertha House + BDO + Momentum Meersig',
-    },
-    {
-      username: 'dube-user',
-      password: 'dube123',
-      description: 'Dube Trade Port Manager',
-      portfolios: 'Dube Trade Port only',
-    },
-    {
-      username: 'bertha-user',
-      password: 'bertha123',
-      description: 'Bertha House Manager',
-      portfolios: 'Bertha House only',
-    },
-    {
-      username: 'bdo-user',
-      password: 'bdo123',
-      description: 'BDO Manager',
-      portfolios: 'BDO only',
-    },
-    {
-      username: 'momentum-user',
-      password: 'momentum123',
-      description: 'Momentum Meersig Manager',
-      portfolios: 'Momentum Meersig only',
-    },
-  ];
-
   return (
     <Box
       sx={{
@@ -194,41 +161,7 @@ const LoginPage = () => {
             </Alert>
           )}
 
-          {/* Demo Users */}
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Demo Users
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Try these different user accounts to see portfolio-specific access:
-            </Typography>
-            
-            {demoUsers.map((user, index) => (
-              <Box
-                key={index}
-                sx={{
-                  p: 2,
-                  mb: 1,
-                  border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-                  borderRadius: 2,
-                  bgcolor: alpha(theme.palette.background.paper, 0.5),
-                }}
-              >
-                <Typography variant="subtitle2" fontWeight={700}>
-                  {user.description}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Username: <strong>{user.username}</strong>
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Password: <strong>{user.password}</strong>
-                </Typography>
-                <Typography variant="body2" color="primary">
-                  Access: {user.portfolios}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+
 
           {/* Instructions */}
           <Box sx={{ mt: 3, p: 2, bgcolor: alpha(theme.palette.info.main, 0.1), borderRadius: 2 }}>

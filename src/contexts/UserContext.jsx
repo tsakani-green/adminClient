@@ -20,19 +20,42 @@ export const UserProvider = ({ children }) => {
   const [allClients, setAllClients] = useState([]);
 
   useEffect(() => {
-    if (token) {
-      fetchUserProfile();
-      fetchAllClients();
-    } else {
-      setLoading(false);
+    let mounted = true
+
+    const init = async () => {
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      // Fetch profile first so we know the role
+      const profile = await fetchUserProfile()
+
+      // Only fetch all clients if user is admin
+      if (profile && profile.role === 'admin') {
+        await fetchAllClients()
+      } else if (profile && profile.role !== 'admin') {
+        // Non-admin users should only see their own basic info
+        // Ensure allClients contains at least the current user
+        setAllClients([profile])
+      }
+
+      if (mounted) {
+        setLoading(false)
+      }
     }
+
+    init()
 
     // Add a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 5000); // 5 seconds timeout
+      if (mounted) setLoading(false)
+    }, 5000) // 5 seconds timeout
 
-    return () => clearTimeout(timeout);
+    return () => {
+      mounted = false
+      clearTimeout(timeout)
+    }
   }, [token]);
 
   const fetchAllClients = async () => {
@@ -45,25 +68,8 @@ export const UserProvider = ({ children }) => {
       setAllClients(response.data.users || []);
     } catch (error) {
       console.error('Error fetching clients:', error);
-      // Fallback to mock data if API fails
-      setAllClients([
-        {
-          username: 'dube-user',
-          full_name: 'Dube Trade Port Manager',
-          email: 'dube@dubetradeport.com',
-          role: 'client',
-          portfolio_access: ['dube-trade-port', 'bertha-house'],
-          status: 'active'
-        },
-        {
-          username: 'bertha-user',
-          full_name: 'Bertha House Manager',
-          email: 'bertha@berthahouse.com',
-          role: 'client',
-          portfolio_access: ['bertha-house'],
-          status: 'active'
-        }
-      ]);
+      // Do not expose mock data when the API fails — keep clients empty
+      setAllClients([]);
     }
   };
 
@@ -75,36 +81,44 @@ export const UserProvider = ({ children }) => {
         },
       });
       setUser(response.data);
+      return response.data
     } catch (error) {
       console.error('Error fetching user profile:', error);
       // If we get a 401 error, clear the token and user
       if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
-        console.log('Invalid token, cleared authentication');
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setToken(null)
+        setUser(null)
+        console.log('Invalid token, cleared authentication')
+        return null
       } else {
         // Don't clear token on other errors - user is still logged in
         // We'll use the basic user info we set during login
-        console.log('Using basic user info from login');
+        console.log('Using basic user info from login')
+        // Attempt to read basic user info from localStorage
+        const stored = localStorage.getItem('user')
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            setUser(parsed)
+            return parsed
+          } catch (e) {
+            console.error('Failed to parse stored user info', e)
+          }
+        }
+        return null
       }
-    } finally {
-      setLoading(false);
     }
   };
 
   const login = async (username, password) => {
     try {
-      const params = new URLSearchParams();
-      params.append('username', username);
-      params.append('password', password);
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
 
-      const response = await axios.post(`${API_URL}/api/auth/login`, params, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      const response = await axios.post(`${API_URL}/api/auth/login`, formData);
       
       const { access_token, user_id, role } = response.data;
       
@@ -154,7 +168,13 @@ export const UserProvider = ({ children }) => {
 
   // Helper function to get all available clients for admin
   const getAllClients = () => {
-    return allClients;
+    if (user && user.role === 'admin') return allClients
+    // For non-admins, return only their own client record if present
+    if (user) {
+      const own = allClients.find((c) => c.username === user.username)
+      return own ? [own] : [user]
+    }
+    return []
   };
 
   const logout = () => {
@@ -208,7 +228,7 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const value = React.useMemo(() => ({
+  const value = {
     user,
     loading,
     token,
@@ -219,7 +239,7 @@ export const UserProvider = ({ children }) => {
     getAllClients,
     fetchAllClients,
     isAuthenticated: !!token,
-  }), [user, loading, token, allClients]);
+  };
 
   return (
     <UserContext.Provider value={value}>
