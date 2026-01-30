@@ -1,20 +1,26 @@
-FROM node:18-alpine
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-RUN npm install
+# Copy requirements first for better caching
+COPY requirements.txt .
 
-# Copy all files
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
 
-# Build the application (for production)
-# RUN npm run build
+# Create uploads directory
+RUN mkdir -p uploads
 
-EXPOSE 5173
+EXPOSE 8002
 
-# For development
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
